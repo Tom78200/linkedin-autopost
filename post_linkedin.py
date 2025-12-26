@@ -85,21 +85,40 @@ def main():
             sys.exit(1)
         
         print("Waiting for feed/post button...")
+        post_button_selector = None
+        
         try:
-            # Robust selector: Text-based (English + French)
+            # OPTION 1: ARIA Labels (Best for A/B + Language agnosticism)
+            print("Trying generic ARIA selectors...")
             page.wait_for_selector(
-                "button:has-text('Start a post'), button:has-text('Commencer un post')", 
-                timeout=60000
+                "div[role='button'][aria-label*='post'], div[role='button'][aria-label*='publication']",
+                timeout=20000
             )
+            post_button_selector = "div[role='button'][aria-label*='post'], div[role='button'][aria-label*='publication']"
         except Exception:
-            print("timeout waiting for button, dumping debug screenshot")
-            page.screenshot(path="debug_home.png")
-            raise
+            print("Primary selector failed. Trying fallback data-attributes...")
+            try:
+                # OPTION 2: Internal LinkedIn data attributes (Fallback)
+                page.wait_for_selector(
+                    "[data-control-name='create_post'], [data-test-global-nav-add-post']",
+                    timeout=20000
+                )
+                post_button_selector = "[data-control-name='create_post'], [data-test-global-nav-add-post']"
+            except Exception:
+                # OPTION 3: Feed container exists (Session valid) but button hidden?
+                print("Fallback failed. Checking if feed exists at least...")
+                if page.is_visible("div.feed-shared-update-v2"):
+                     print("Feed is visible! Button might be obfuscated. Dumping screenshot.")
+                else:
+                     print("Critical: Even the feed is not visible. Session might be dead/empty.")
+                
+                page.screenshot(path="debug_home_failed.png", full_page=True)
+                raise
 
-        random_sleep(3, 6)
+        random_sleep(2, 4)
             
-        print("Clicking 'Start a post'...")
-        page.click("button:has-text('Start a post'), button:has-text('Commencer un post')")
+        print(f"Clicking 'Start a post' using selector: {post_button_selector}")
+        page.click(post_button_selector)
         
         random_sleep(2, 4)
         
