@@ -1,0 +1,20 @@
+Les limites du trilemme des blockchains et les solutions de Layer 2.
+Pourquoi les Rollups Optimistic sont inférieurs aux ZK-Rollups à long terme.
+La fragmentation de la liquidité dans les environnements cross-chain.
+Account Abstraction (ERC-4337) : pourquoi l'adoption réelle est lente.
+Les risques de sécurité des ponts (bridges) centralisés vs trustless.
+Data Availability Sampling (DAS) sur Ethereum : explication technique.
+Le problème du MEV (Maximum Extractable Value) sur les DEXs.
+Restaking avec EigenLayer : risques de slashing en cascade.
+Pourquoi la décentralisation des séquenceurs est critique pour les L2.
+Les attaques par réentrance dans Solidity : au-delà de l'exemple basique.
+Zero-Knowledge Proofs : différence entre SNARKs et STARKs.
+L'impact de EIP-4844 (Proto-Danksharding) sur les frais de gaz.
+La centralisation cachée des fournisseurs de RPC comme Infura/Alchemy.
+Les oracles blockchain et le problème de la vérité off-chain.
+Smart Contract Upgradability : proxy pattern vs immutability.
+Les défis de la confidentialité on-chain (Aztec, Monero).
+Pourquoi Proof-of-Stake favorise intrinsèquement la centralisation de la richesse.
+Les vulnérabilités des signatures multisig mal configurées.
+L'avenir des Modular Blockchains vs Monolithic.
+Les dangers des stablecoins algorithmiques après Terra/Luna.
