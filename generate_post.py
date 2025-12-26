@@ -7,7 +7,7 @@ from groq import Groq
 IDEAS_FILE = "ideas/web3.txt"
 PROMPT_FILE = "prompt.txt"
 OUTPUT_FILE = "post.txt"
-MODEL_NAME = "llama3-8b-8192"
+MODEL_NAME = "llama-3.3-70b-versatile"
 
 def main():
     api_key = os.environ.get("GROQ_API_KEY")
