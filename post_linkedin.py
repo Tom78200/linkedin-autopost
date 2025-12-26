@@ -37,31 +37,34 @@ def main():
         sys.exit(1)
 
     # 2. Setup Authentication State
-    # We expect the JSON state string in the env var LINKEDIN_STATE_JSON
     state_json_str = os.environ.get("LINKEDIN_STATE_JSON")
     
-    # If not in env, check if file exists locally (for local testing)
-    if not state_json_str and os.path.exists(STATE_FILE):
-        print("Using local state.json file.")
-    elif state_json_str:
+    state = None
+    if state_json_str:
         print("Using state from environment variable.")
-        # Write to temporary file for Playwright
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            f.write(state_json_str)
+        try:
+            state = json.loads(state_json_str)
+        except json.JSONDecodeError:
+            print("Error: LINKEDIN_STATE_JSON is not valid JSON.")
+            sys.exit(1)
+    elif os.path.exists(STATE_FILE):
+        print("Using local state.json file.")
+        # Playwright accepts path string for local file, or dict for memory object
+        state = STATE_FILE
     else:
-        print("Error: No authentication state found. Set LINKEDIN_STATE_JSON or provide state.json.")
+        print("Error: No authentication state found. Set LINKEDIN_STATE_JSON.")
         sys.exit(1)
 
     # 3. Launch Browser
     with sync_playwright() as p:
         print("Launching browser...")
-        browser = p.chromium.launch(headless=True) # Set headless=False to debug visually
+        browser = p.chromium.launch(headless=True)
         
         try:
-            context = browser.new_context(storage_state=STATE_FILE)
+            # storage_state accepts path (str) or full state object (dict)
+            context = browser.new_context(storage_state=state)
         except Exception as e:
             print(f"Error loading storage_state: {e}")
-            print("Your cookie/state might be invalid or expired.")
             sys.exit(1)
             
         page = context.new_page()
@@ -69,65 +72,34 @@ def main():
         print(f"Navigating to {LINKEDIN_URL}...")
         page.goto(LINKEDIN_URL, timeout=60000)
         
-        # LinkedIn never settles to networkidle due to background polling.
-        # We wait for the "Start a post" button (or feed) to be visible instead.
-        print("Waiting for feed to load...")
+        print("Waiting for feed/post button...")
         try:
-            # Wait for the "Start a post" button triggers
-            page.wait_for_selector("button.share-box-feed-entry__trigger", timeout=60000)
+            # Robust selector: Text-based (English + French)
+            page.wait_for_selector(
+                "button:has-text('Start a post'), button:has-text('Commencer un post')", 
+                timeout=60000
+            )
         except Exception:
-            print("Warning: explicit selector wait timed out, checking visibility anyway.")
+            print("timeout waiting for button, dumping debug screenshot")
+            page.screenshot(path="debug_home.png")
+            raise
 
         random_sleep(3, 6)
-        
-        random_sleep(2, 5)
-
-        # Check login success by looking for the 'Start a post' button trigger or profile
-        # "Start a post" button usually has text "Start a post" or similar class
-        # We rely on text selector for robustness across class updates, though language specific.
-        # Fallback to more generic selectors if possible.
-        
-        # Attempt to find the "Start a post" button. 
-        # Selector strategy: Look for the button that opens the modal.
-        start_post_btn = page.locator("button.share-box-feed-entry__trigger")
-        
-        if not start_post_btn.is_visible():
-            print("Error: 'Start a post' button not found. You might not be logged in.")
-            # Capture screenshot for debug
-            page.screenshot(path="debug_login_fail.png")
-            sys.exit(1)
             
-        print("Logged in successfully. Clicking 'Start a post'...")
-        start_post_btn.click()
+        print("Clicking 'Start a post'...")
+        page.click("button:has-text('Start a post'), button:has-text('Commencer un post')")
         
         random_sleep(2, 4)
         
-        # The input box in the modal. 
-        # It's usually a div with role='textbox' inside the modal.
-        editor = page.locator("div.ql-editor[role='textbox']")
-        
-        if not editor.is_visible():
-            print("Error: Post editor not visible.")
-            page.screenshot(path="debug_editor_fail.png")
-            sys.exit(1)
-            
         print("Typing content...")
-        # We use fill or manual typing. Text is short so simple fill is okay, 
-        # but typing is safer for anti-bot.
+        # Check for editor validity
+        page.wait_for_selector("div.ql-editor[role='textbox']", state="visible")
         type_like_human(page, "div.ql-editor[role='textbox']", content)
         
         random_sleep(2, 5)
         
-        # Click Post
-        # Button usually says "Post"
-        post_button = page.locator("button.share-actions__primary-action")
-        
-        if not post_button.is_enabled():
-            print("Error: Post button is disabled.")
-            sys.exit(1)
-            
         print("Clicking 'Post'...")
-        post_button.click()
+        page.click("button:has-text('Post'), button:has-text('Publier')")
         
         # Wait for modal to disappear or success toast
         random_sleep(5, 8)
