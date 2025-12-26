@@ -72,6 +72,18 @@ def main():
         print(f"Navigating to {LINKEDIN_URL}...")
         page.goto(LINKEDIN_URL, timeout=60000)
         
+        print(f"Current URL after navigation: {page.url}")
+        
+        if "login" in page.url or "checkpoint" in page.url or "auth" in page.url:
+            print("\n" + "="*50)
+            print("❌ ERROR: SESSION INVALID")
+            print("LinkedIn redirected you to a login or security checkpoint page.")
+            print("This means your LINKEDIN_STATE_JSON cookies are expired or rejected by LinkedIn.")
+            print("👉 ACTION: You must regenerate your cookies using 'get_linkedin_cookies.py' locally and update the GitHub Secret.")
+            print("="*50 + "\n")
+            page.screenshot(path="debug_redirect.png")
+            sys.exit(1)
+        
         print("Waiting for feed/post button...")
         try:
             # Robust selector: Text-based (English + French)

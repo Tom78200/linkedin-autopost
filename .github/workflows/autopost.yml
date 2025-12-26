@@ -39,3 +39,10 @@ jobs:
         LINKEDIN_STATE_JSON: ${{ secrets.LINKEDIN_STATE_JSON }}
       run: |
         python post_linkedin.py
+        
+    - name: Upload Debug Screenshots
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug-screenshots
+        path: "*.png"
