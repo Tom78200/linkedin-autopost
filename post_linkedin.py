@@ -67,8 +67,18 @@ def main():
         page = context.new_page()
 
         print(f"Navigating to {LINKEDIN_URL}...")
-        page.goto(LINKEDIN_URL)
-        page.wait_for_load_state("networkidle")
+        page.goto(LINKEDIN_URL, timeout=60000)
+        
+        # LinkedIn never settles to networkidle due to background polling.
+        # We wait for the "Start a post" button (or feed) to be visible instead.
+        print("Waiting for feed to load...")
+        try:
+            # Wait for the "Start a post" button triggers
+            page.wait_for_selector("button.share-box-feed-entry__trigger", timeout=60000)
+        except Exception:
+            print("Warning: explicit selector wait timed out, checking visibility anyway.")
+
+        random_sleep(3, 6)
         
         random_sleep(2, 5)
 
